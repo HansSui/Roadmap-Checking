@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap Duo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@500;700&family=Figtree:wght@400;500;600&display=swap">
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <nav class="accts" id="switcher" aria-label="Accounts"></nav>
+    <div class="tools">
+      <span class="sync" id="sync" role="status">Saved in this browser</span>
+      <button class="sm" id="theme-btn" data-act="theme" title="Switch between automatic, light and dark">Theme: Auto</button>
+      <button class="sm" data-act="data">Backup</button>
+    </div>
+  </header>
+  <div id="hero"></div>
+  <div id="tabs"></div>
+  <main id="view" class="view"></main>
+
+  <details class="panel data" id="data-panel">
+    <summary>Backup and restore</summary>
+    <div class="inner">
+      <p class="note" id="bk-note"></p>
+      <div class="btnrow">
+        <button class="primary" id="bk-export" data-act="bk-export">Download backup file</button>
+        <button data-act="bk-pick">Import from file</button>
+        <button data-act="bk-copy">Copy as text</button>
+      </div>
+      <input type="file" id="bk-file" accept="application/json,.json" hidden>
+      <label class="f">Or paste backup text here<textarea id="bk" spellcheck="false" placeholder="Paste a backup here, then press Restore from text"></textarea></label>
+      <div class="btnrow">
+        <button data-act="bk-restore">Restore from text</button>
+        <button class="danger" data-act="bk-reset">Reset everything</button>
+      </div>
+      <p class="msg" id="bk-msg" role="status"></p>
+    </div>
+  </details>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/defaults.js"></script>
+<script src="js/core.js"></script>
+<script src="js/sync-local.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
