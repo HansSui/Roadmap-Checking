@@ -1,52 +1,88 @@
 # Roadmap Duo
 
-One page, two accounts. Switch between them at the top.
+A planner with two separate accounts on one page: **Crypto + RE** (cryptography and reverse engineering) and **2D Art** (character design, animation and rigging). Each account has its own roadmap, ticks, colours and tools, and everything in the plan can be edited.
 
-- **Crypto + RE**: year-by-year plan, checklist, reference notes and a grade calculator.
-- **2D Art**: phase-by-phase plan, checklist, reference notes and an applications tracker.
+## Accounts
 
-Each account has its own colours, ticks and plan. Turn on **Edit plan** to change phases, tasks, notes, and the account name and goal. Deleting something shows an **Undo** button for a few seconds.
+Two cards at the top switch between the accounts. Each card shows the account name, a subtitle and its overall progress. The page re-themes when you switch:
 
-## Files
+- **Crypto + RE**: graphite green, square tick boxes, monospaced labels.
+- **2D Art**: ink blue with a coral highlight, round tick boxes, and phase cells drawn as film frames.
 
-```
-index.html          page structure
-css/styles.css      all styles and the two colour themes
-js/theme.js         applies the saved light/dark choice before first paint
-js/defaults.js      starting plans, notes and job leads for both accounts
-js/core.js          data helpers, normalising, state, saving to localStorage
-js/sync-local.js    save status and cross-tab updates (browser storage)
-js/render.js        every screen (plan, checklist, reference, grades, applications)
-js/app.js           clicks, typing, undo, backup, routing
-```
+The accounts are independent. Ticks, plan edits and tools never mix. Each screen has its own link (`#cyber-plan`, `#artist-applications` and so on), so you can bookmark one.
 
-The scripts are plain `<script>` tags, not modules, so the page also works when you open `index.html` straight from disk.
+## Screens
 
-## Run it locally
+Every account has the same first three tabs and one tool tab of its own.
 
-Open the folder in VS Code, install the **Live Server** extension, right-click `index.html` and choose **Open with Live Server**. Opening the file directly also works. There is no build step.
+### Plan
+- A header with the account's headline, goal, a progress ring and the current phase.
+- A strip of phase cells showing progress per phase. The first phase with unfinished tasks is marked **Now**, and finished phases are marked **Done**. Clicking a cell jumps to that phase.
+- **Next up**: the next few unticked tasks from the current phase, which you can tick directly.
+- Collapsible phase cards. Each has a goal, focus points, what to expect, a gate (the condition for finishing the phase) and a task list. Tasks marked **Target** are the key milestones. **Expand all** and **Collapse all** open or close every card.
 
-## Publish on GitHub Pages
+### Checklist
+A flat list of every task grouped by phase, in the style of a problem list. Filter by phase, search by text or tag, hide completed tasks, and add a task to any phase. It shares the same ticks as the Plan tab.
 
-1. Push this folder to a GitHub repository (the files above at the repo root).
-2. In the repository, open **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**, pick `main` and `/ (root)`, then save.
-4. Your site appears at `https://<your-username>.github.io/<repo-name>/` after a minute or two.
+### Reference
+The background notes for the account, shown as lists and tables.
+- Crypto + RE: the research thread, certification table, Red Hat exam notes, weekly habits and things to watch.
+- 2D Art: the short version, career options table, the five lanes, pay signals, weekly time budget, habits to keep and avoid, and open points.
 
-## Where your data lives
+### Grades (Crypto + RE)
+A grade calculator for your university subjects, entered by hand.
+- Each subject has four components: Quá trình, Thực hành, Giữa kỳ and Cuối kỳ. Give each a weight (%) and a score out of 10. A weight of 0 removes that component.
+- It shows the weighted final grade, the letter grade and the 4.0 points, and warns if the weights do not add up to 100.
+- While some scores are missing, it shows the running average and the score you still need on the remaining components to reach your target grade, or tells you the target is out of reach.
+- The summary shows your GPA on the 10-point and 4.0 scales, weighted by credits.
+- The three subjects at the start are examples and can be removed in one click.
 
-Everything is saved in the browser's localStorage, per browser and per address. A phone, another laptop, a private window, or a different address (for example `127.0.0.1:5500` versus your GitHub Pages address) each start from the defaults.
+### Applications (2D Art)
+A tracker for studios you are looking at or have applied to.
+- Each entry holds studio, role, status, date, listing link and notes. Statuses are Saved, Applied, Replied, Test, Interview, Offer and Rejected.
+- A counter shows applications sent against your goal (20 by default). Saved leads do not count. Everything from Applied onward does, including rejections.
+- Filter by status. Changing a status away from Saved fills in today's date if the date is empty.
+- It starts with three leads from the plan: Gear Games, Otsu Labs and Amanotes.
 
-Use **Backup** at the top of the page to move your data:
+## Editing the plan
 
-- **Download backup file** saves a `.json` file. Open the site on another device, choose **Import from file**, and pick it.
+**Edit plan** (top right of the Plan and Reference tabs) turns the screen into an editor, and everything saves as you type.
+- Change the account name, subtitle, headline and goal.
+- Edit any phase: label, period, title, goal, focus points, expectations and gate. Add, delete and reorder phases.
+- Edit any task: text, tag, date note and Target flag. Add, delete and reorder tasks.
+- Edit the Reference notes. Lists take one bullet per line, and tables take one row per line with columns separated by ` | ` (the first line is the header). Text supports `**bold**` and `[link text](https://example.com)`.
+- **Reset plan to default** restores the original plan for that account.
+
+## Undo
+
+Deleting a task, phase, note, subject or application, resetting a plan, removing the example subjects, importing a backup and resetting everything all show an **Undo** button for a few seconds.
+
+## Saving and backup
+
+All data is saved in the browser's localStorage, so it stays on that browser and device and works offline. It covers ticks, plan edits, subjects, scores, applications and settings for both accounts. The header shows when it last saved, and warns if the browser refuses to save.
+
+The **Backup** panel moves data between browsers and devices:
+- **Download backup file** saves everything as a `.json` file, and **Import from file** loads one.
 - **Copy as text** and **Restore from text** do the same through the clipboard.
 - Backups from the earlier single-account version also import.
 
-Clearing site data wipes your saved plan, so download a backup now and then.
+If you change the page's address or clear site data, the saved data starts again from the defaults, so keep a backup file for anything you care about.
 
-If the repository is public, anyone can read the default plans in `js/defaults.js`. Your own edits and ticks stay in your browser and are not uploaded anywhere.
+## Appearance
 
-## Edit the defaults
+The page follows your system light or dark setting, and the **Theme** button cycles Auto, Light and Dark. The tab bar stays at the top while you scroll. The layout adapts down to phone width.
 
-The starting content is in `js/defaults.js`: `DEF.cyber`, `DEF.artist` (phases, tasks, notes) and `DEF_APPS` (starter job leads). People who already have saved edits keep their own version, and **Reset plan to default** in edit mode loads the new defaults. The grade-scale cutoffs are in `grade4()` in `js/render.js`.
+## What is included
+
+| File | What it holds |
+| --- | --- |
+| `index.html` | The page structure: account switcher, header tools, the areas the screens render into, the backup panel and the undo message |
+| `css/styles.css` | All styling, including both account colour themes in light and dark |
+| `js/theme.js` | Applies your saved light or dark choice before the page paints |
+| `js/defaults.js` | The starting content: both plans, their reference notes, and the starter job leads |
+| `js/core.js` | Data handling: cleaning and validating data, the app state, saving to localStorage, and the plan editing helpers |
+| `js/sync-local.js` | The save status message and updates between open tabs |
+| `js/render.js` | Every screen: plan, checklist, reference, grades and applications, plus the grade calculations |
+| `js/app.js` | Clicks and typing, editing actions, undo, backup and import, and the screen routing |
+
+To change the starting plans, edit `js/defaults.js`. Anyone who already has saved edits keeps their own version until they use **Reset plan to default**. The grade-scale cutoffs are in `grade4()` in `js/render.js`.
