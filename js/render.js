@@ -34,7 +34,6 @@ function renderTop() { renderSwitcher(); renderHero(); }
 function renderView() {
   const fn = { plan: viewPlan, checklist: viewChecklist, reference: viewReference, grades: viewGrades, applications: viewApps }[curTab];
   $('#view').innerHTML = fn();
-  if (curTab === 'grades') updateSummary();
 }
 function renderAll() { document.documentElement.setAttribute('data-acct', cur); renderTop(); renderTabs(); renderView(); }
 
@@ -134,89 +133,6 @@ function checklistList() {
       <div class="rows">${list.map(t => taskRow(t, 'cl-')).join('') || '<p class="note pad">No tasks yet.</p>'}</div></section>`;
   }).join('');
   return out || '<div class="panel empty">Nothing matches.</div>';
-}
-
-/* ================= grades tab (account 1) ================= */
-function num(v) {
-  if (v == null) return null;
-  const t = String(v).trim().replace(',', '.'); if (t === '') return null;
-  const n = Number(t); return Number.isFinite(n) ? n : NaN;
-}
-function grade4(x) {
-  const r = Math.round(x * 10) / 10;
-  if (r >= 8.5) return ['A', 4]; if (r >= 8) return ['B+', 3.5]; if (r >= 7) return ['B', 3]; if (r >= 6.5) return ['C+', 2.5];
-  if (r >= 5.5) return ['C', 2]; if (r >= 5) return ['D+', 1.5]; if (r >= 4) return ['D', 1]; return ['F', 0];
-}
-function calc(s) {
-  const Tg = num(CY().target); let total = 0, wBad = false, sBad = false; const act = [];
-  COMPS.forEach(c => {
-    let w = num(s.w[c.k]); if (Number.isNaN(w) || (w != null && w < 0)) { wBad = true; w = 0; } if (w == null) w = 0;
-    let sc = num(s.s[c.k]); if (Number.isNaN(sc) || (sc != null && (sc < 0 || sc > 10))) { sBad = true; sc = null; }
-    total += w; if (w > 0) act.push({ c, w, sc });
-  });
-  const graded = act.filter(a => a.sc != null), rem = act.filter(a => a.sc == null);
-  const gW = graded.reduce((a, b) => a + b.w, 0);
-  const earned = total > 0 ? graded.reduce((a, b) => a + b.w * b.sc, 0) / total : 0, share = total > 0 ? gW / total : 0;
-  const out = { total, wBad, sBad, act, graded, rem, earned, share, complete: act.length > 0 && rem.length === 0 };
-  if (out.complete) { out.final = earned; out.g4 = grade4(earned); }
-  if (share > 0) out.running = earned / share;
-  if (rem.length && total > 0 && Tg != null && !Number.isNaN(Tg)) { const rs = 1 - share; out.need = (Tg - earned) / rs; out.max = earned + rs * 10; out.T = Tg; }
-  return out;
-}
-function outHTML(s) {
-  const r = calc(s), t = Math.round(r.total * 100) / 100;
-  const pill = r.total === 0 ? `<span class="pill warn">Enter weights above</span>` : (Math.abs(r.total - 100) < 0.001 ? `<span class="pill">Weights total 100%</span>` : `<span class="pill warn">Weights total ${t}%, expected 100%</span>`);
-  let body = '';
-  if (r.complete) {
-    body = `<div class="res"><span class="final">${r.final.toFixed(2)}</span><span class="meta">/ 10 &middot; rounds to ${(Math.round(r.final * 10) / 10).toFixed(1)} &middot; ${r.g4[0]} &middot; ${r.g4[1].toFixed(1)} / 4.0</span></div>`;
-  } else if (r.act.length) {
-    body += r.graded.length ? `<div class="res"><span class="final">${r.running.toFixed(2)}</span><span class="meta">running average over ${Math.round(r.share * 100)}% of the grade</span></div>` : `<div class="note">No scores entered yet.</div>`;
-    if (r.need != null) {
-      const names = r.rem.map(a => a.c.vi).join(' + ');
-      const line = r.need <= 0 ? `Target ${r.T} is already secured.` : r.need > 10 ? `Target ${r.T} is out of reach. The best possible result is <b>${r.max.toFixed(2)}</b>.` : `To finish on ${r.T}, you need <b>${r.need.toFixed(2)}</b> ${r.rem.length > 1 ? 'on average ' : ''}in ${esc(names)}.`;
-      body += `<div class="note">${line}</div>`;
-    }
-  }
-  if (r.sBad) body += `<div class="note" style="color:var(--bad)">A score outside 0 to 10 is ignored.</div>`;
-  if (r.wBad) body += `<div class="note" style="color:var(--bad)">A weight that is not a positive number counts as 0.</div>`;
-  return pill + body;
-}
-function cardHTML(s) {
-  const rows = COMPS.map(c => `<div class="name"><b>${c.vi}</b><small>${c.en}</small></div>
-    <input type="text" inputmode="decimal" id="${s.id}-w-${c.k}" data-sid="${s.id}" data-f="w.${c.k}" value="${esc(s.w[c.k])}" aria-label="${c.vi} weight percent" placeholder="0">
-    <input type="text" inputmode="decimal" id="${s.id}-s-${c.k}" data-sid="${s.id}" data-f="s.${c.k}" value="${esc(s.s[c.k])}" aria-label="${c.vi} score out of 10" placeholder="-">`).join('');
-  return `<article class="panel card" data-card="${s.id}"><div class="card-top">
-    <label class="f">Subject${s.ex ? '<span class="ex">Example</span>' : ''}<input type="text" id="${s.id}-name" data-sid="${s.id}" data-f="name" value="${esc(s.name)}" placeholder="Subject name"></label>
-    <label class="f">Credits<input type="text" inputmode="decimal" id="${s.id}-cr" data-sid="${s.id}" data-f="credits" value="${esc(s.credits)}"></label>
-    <button class="danger" data-act="rm-subj" data-rm="${s.id}">Delete</button></div>
-    <div class="comp"><span class="h">Component</span><span class="h" style="text-align:right">Weight %</span><span class="h" style="text-align:right">Score /10</span>${rows}</div>
-    <div class="out" id="${s.id}-out">${outHTML(s)}</div></article>`;
-}
-function viewGrades() {
-  const hasEx = CY().subjects.some(s => s.ex);
-  return `<section class="panel sum" id="sum"></section>
-    ${hasEx ? `<div class="banner"><span>These subjects are examples so you can see how it works. Replace them with your own.</span><button data-act="rm-ex">Remove examples</button></div>` : ''}
-    <div class="subjects">${CY().subjects.map(cardHTML).join('') || '<div class="panel empty">No subjects yet. Add your first one.</div>'}</div>
-    <div class="btnrow"><button class="primary" data-act="add-subj">Add subject</button></div>
-    <p class="foot">Each subject&rsquo;s grade is the weighted sum of its scores on a 10-point scale. Components with weight 0 are ignored. Letter and 4.0 points use a common Vietnamese scale (8.5 A, 8.0 B+, 7.0 B, 6.5 C+, 5.5 C, 5.0 D+, 4.0 D) applied to the grade rounded to one decimal. Your school may use different cutoffs.</p>`;
-}
-function updateSummary() {
-  const el = $('#sum'); if (!el) return;
-  let cr = 0, s10 = 0, s4 = 0, done = 0, prog2 = 0;
-  CY().subjects.forEach(s => { const r = calc(s), c = num(s.credits); if (r.complete && c > 0) { cr += c; s10 += r.final * c; s4 += r.g4[1] * c; done++; } else if (!r.complete && r.graded.length) prog2++; });
-  el.innerHTML = `<label class="f">Target grade (10-point)<input type="text" inputmode="decimal" id="target" value="${esc(CY().target)}"></label>
-    <div class="cellx"><span class="big">${done ? (s10 / cr).toFixed(2) : '-'}</span><small>GPA, 10-point scale</small></div>
-    <div class="cellx"><span class="big">${done ? (s4 / cr).toFixed(2) : '-'}</span><small>GPA, 4.0 scale</small></div>
-    <div class="cellx"><span class="big">${cr || '-'}</span><small>credits counted &middot; ${done} complete${prog2 ? ', ' + prog2 + ' in progress' : ''}</small></div>`;
-}
-function updateCard(id) {
-  const s = CY().subjects.find(x => x.id === id), card = $(`[data-card="${id}"]`); if (!s || !card) return;
-  $('#' + id + '-out').innerHTML = outHTML(s);
-  card.querySelectorAll('input[data-f]').forEach(inp => {
-    const [grp, k] = inp.dataset.f.split('.'); if (!k) return;
-    const v = num(inp.value), bad = Number.isNaN(v) || (v != null && v < 0) || (grp === 's' && v != null && v > 10);
-    inp.setAttribute('aria-invalid', bad ? 'true' : 'false');
-  });
 }
 
 /* ================= applications tab (account 2) ================= */

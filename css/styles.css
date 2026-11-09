@@ -308,3 +308,56 @@ button.sm { padding: 5px 10px; font-size: 12px; }
 }
 .toast button { background: transparent; border: 0; color: var(--accent-soft); font-weight: 600; padding: 2px 4px; text-decoration: underline; }
 .toast button:hover { border: 0; }
+
+/* ===== semester planner ===== */
+.sum { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.sum .of { font-size: 16px; color: var(--muted); font-weight: 500; }
+.blks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px 20px; margin-top: 8px; }
+.blk-h { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; }
+.blk-h span { color: var(--muted); flex: 1 1 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.bar { position: relative; height: 8px; border-radius: 4px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.bar i, .bar b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.bar i { background: var(--accent2-soft); } .bar b { background: var(--accent); }
+.pill.ok { background: var(--accent-soft, var(--accent2-soft)); }
+.semstrip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; }
+.semchip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel, transparent); color: var(--ink); cursor: pointer; font: inherit; }
+.semchip small { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.semchip.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.semchip.warn { border-color: var(--bad); }
+.semchip.add { justify-content: center; border-style: dashed; color: var(--muted); }
+.wi { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: var(--bad); color: #fff; font-size: 10px; margin-left: 4px; }
+.semp { display: flex; flex-direction: column; gap: 12px; }
+.semh { display: grid; grid-template-columns: 1fr 150px auto; gap: 8px; align-items: end; }
+.semtools { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: flex; flex-direction: column; min-width: 78px; padding: 6px 10px; border-radius: 8px; background: var(--accent2-soft); }
+.chip b { font-variant-numeric: tabular-nums; } .chip small { color: var(--muted); font-size: 11px; }
+.chip.bad { background: var(--bad); color: #fff; } .chip.bad small { color: inherit; }
+.warnbox { border-left: 3px solid var(--bad); background: var(--accent2-soft); padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.crslist { display: flex; flex-direction: column; gap: 6px; }
+.crs { border: 1px solid var(--line); border-radius: 10px; }
+.crs.pending { border-style: dashed; }
+.crs-row { display: grid; grid-template-columns: 28px 62px 1fr auto 28px 64px; gap: 8px; align-items: center; padding: 6px 10px; }
+.crs-row .x { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 4px; }
+.crs-row .code { font-family: var(--f-mono); font-size: 12px; }
+.crs-row .nm small, .cat-row .nm small { display: block; color: var(--muted); font-size: 11px; }
+.crs-row .cr, .cat-row .cr { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.crs-row .sm { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+.tagnt { font-family: var(--f-mono); font-size: 10px; background: var(--accent); color: var(--on-accent, #fff); padding: 1px 5px; border-radius: 4px; }
+.crs-body { border-top: 1px solid var(--line); padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.crs-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.crs-fields .nm2 { grid-column: span 2; }
+.crs-flags { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.chk { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.catalog > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.catalog .muted { color: var(--muted); font-size: 13px; }
+.catalog h3 { font-size: 13px; margin: 16px 0 4px; color: var(--muted); }
+.cat-row { display: grid; grid-template-columns: 62px 1fr auto 28px auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.cat-row .code { font-family: var(--f-mono); font-size: 12px; }
+@media (max-width: 520px) {
+  .semh { grid-template-columns: 1fr 110px; } .semtools { grid-column: 1 / -1; }
+  .crs-row { grid-template-columns: 24px 54px 1fr auto; } .crs-row .tagnt, .crs-row .cr { display: none; }
+  .cat-row { grid-template-columns: 54px 1fr auto; } .cat-row .cr, .cat-row .tagnt { display: none; }
+  .crs-fields .nm2 { grid-column: auto; }
+}
+.blk-h .pill, .cat-row .pill { display: inline-block; width: auto; justify-self: end; }

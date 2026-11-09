@@ -26,17 +26,6 @@ function normApps(a) {
   return arr(a).map(x => ({ id: String(x.id || uid()), studio: String(x.studio || ''), role: String(x.role || ''), status: STATUSES.includes(x.status) ? x.status : 'Saved',
     date: String(x.date || ''), link: String(x.link || ''), note: String(x.note || '') }));
 }
-function normSubjects(list) {
-  const blank = { qt: '', th: '', gk: '', ck: '' };
-  return arr(list).map((s, i) => ({ id: String(s.id), ex: !!s.ex, name: s.name || '', credits: s.credits == null ? '' : String(s.credits),
-    w: Object.assign({}, blank, s.w), s: Object.assign({}, blank, s.s), order: typeof s.order === 'number' ? s.order : i + 1 })).sort((a, b) => a.order - b.order);
-}
-function exampleSubjects() {
-  return normSubjects([
-    { id: 'ex1', ex: true, name: 'Cryptography', credits: '3', w: { qt: '20', th: '0', gk: '20', ck: '60' }, s: { qt: '9', th: '', gk: '8.5', ck: '' } },
-    { id: 'ex2', ex: true, name: 'Operating Systems', credits: '4', w: { qt: '10', th: '20', gk: '20', ck: '50' }, s: { qt: '8', th: '9', gk: '7', ck: '7.5' } },
-    { id: 'ex3', ex: true, name: 'Discrete Mathematics', credits: '3', w: { qt: '10', th: '0', gk: '30', ck: '60' }, s: { qt: '7', th: '', gk: '6.5', ck: '6' } }]);
-}
 const DEFP = { cyber: normPlan(DEF.cyber), artist: normPlan(DEF.artist) };
 function withCustom(plan, custom) {
   arr(custom).forEach(c => {
@@ -47,7 +36,7 @@ function withCustom(plan, custom) {
 }
 function blankState() {
   return { accts: {
-    cyber: { plan: null, checks: {}, target: '8', subjects: exampleSubjects() },
+    cyber: { plan: null, checks: {}, target: '8', maxNT: '4', maxCredits: '24', semesters: defaultSemesters() },
     artist: { plan: null, checks: {}, apps: normApps(DEF_APPS), appGoal: '20' } } };
 }
 function normState(p) {
@@ -56,17 +45,19 @@ function normState(p) {
   if (p.accts) {
     const c = p.accts.cyber || {}, a = p.accts.artist || {};
     return { accts: {
-      cyber: { plan: c.plan ? normPlan(c.plan) : null, checks: normChecks(c.checks), target: c.target == null ? '8' : String(c.target), subjects: Array.isArray(c.subjects) ? normSubjects(c.subjects) : b.accts.cyber.subjects },
+      cyber: { plan: c.plan ? normPlan(c.plan) : null, checks: normChecks(c.checks), target: c.target == null ? '8' : String(c.target),
+        maxNT: c.maxNT == null ? '4' : String(c.maxNT), maxCredits: c.maxCredits == null ? '24' : String(c.maxCredits),
+        semesters: Array.isArray(c.semesters) ? normSemesters(c.semesters) : Array.isArray(c.subjects) ? normSemesters(migrateSubjects(c.subjects)) : b.accts.cyber.semesters },
       artist: { plan: a.plan ? normPlan(a.plan) : null, checks: normChecks(a.checks), apps: Array.isArray(a.apps) ? normApps(a.apps) : b.accts.artist.apps, appGoal: a.appGoal == null ? '20' : String(a.appGoal) } } };
   }
   if (Array.isArray(p.subjects)) {
     const cy = b.accts.cyber;
-    cy.checks = normChecks(p.checks); cy.target = p.target == null ? '8' : String(p.target); cy.subjects = normSubjects(p.subjects);
+    cy.checks = normChecks(p.checks); cy.target = p.target == null ? '8' : String(p.target); cy.semesters = normSemesters(migrateSubjects(p.subjects));
     if (arr(p.custom).length) cy.plan = withCustom(normPlan(DEF.cyber), p.custom);
   }
   return b;
 }
-const canon = st => JSON.stringify([st.accts.cyber.plan, Object.keys(st.accts.cyber.checks).sort(), st.accts.cyber.target, st.accts.cyber.subjects,
+const canon = st => JSON.stringify([st.accts.cyber.plan, Object.keys(st.accts.cyber.checks).sort(), st.accts.cyber.target, st.accts.cyber.maxNT, st.accts.cyber.maxCredits, st.accts.cyber.semesters,
   st.accts.artist.plan, Object.keys(st.accts.artist.checks).sort(), st.accts.artist.apps, st.accts.artist.appGoal]);
 
 /* ================= state ================= */
@@ -83,7 +74,6 @@ function cacheLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); retu
 /* save() and saveAll() write the browser copy, then tell the Sync adapter (sync-local.js, or the hosted adapter). */
 function save() { const ok = cacheLocal(); Sync.keys(Array.from(arguments), ok); }
 function saveAll() { const ok = cacheLocal(); Sync.all(ok); }
-function delSubj(id) { CY().subjects = CY().subjects.filter(s => s.id !== id); Sync.del('subj-' + id); save(); }
 let cur = 'cyber', curTab = 'plan';
 const ui = { open: {}, edit: false, filter: 'all', hide: false, q: '', appFilter: 'all', tabOf: { cyber: 'plan', artist: 'plan' } };
 const AC = () => S.accts[cur];

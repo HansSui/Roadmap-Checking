@@ -76,13 +76,6 @@ const ACT = {
   'plan-reset'() {
     withUndo('Plan reset to default', () => { AC().plan = null; Sync.del('plan-' + cur); save(); ui.open = {}; renderAll(); });
   },
-  'add-subj'() {
-    const id = 's' + Date.now();
-    CY().subjects.push({ id, ex: false, order: Date.now(), name: '', credits: '3', w: { qt: '10', th: '20', gk: '20', ck: '50' }, s: { qt: '', th: '', gk: '', ck: '' } });
-    save('subj:' + id); renderView(); const n = document.getElementById(id + '-name'); if (n) { n.focus(); n.scrollIntoView({ block: 'center' }); }
-  },
-  'rm-ex'() { withUndo('Examples removed', () => { CY().subjects.filter(s => s.ex).forEach(s => delSubj(s.id)); renderView(); }); },
-  'rm-subj'(b) { withUndo('Subject deleted', () => { delSubj(b.dataset.rm); renderView(); }); },
   'app-del'(b) { withUndo('Application deleted', () => { S.accts.artist.apps = AP().filter(x => x.id !== b.dataset.aid); save('apps'); renderView(); }); },
   theme() { applyTheme(THEMES[(THEMES.indexOf(themeNow()) + 1) % THEMES.length]); },
   data() { const d = $('#data-panel'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
@@ -103,6 +96,8 @@ const ACT = {
   'bk-reset'() { withUndo('Everything was reset', () => { S = blankState(); saveAll(); ui.open = {}; renderAll(); $('#bk').value = ''; }); bkMsg('Everything was reset. You can undo it for a few seconds.'); }
 };
 
+Object.assign(ACT, SEM_ACT);
+
 /* ================= events ================= */
 document.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
@@ -111,6 +106,7 @@ document.addEventListener('click', e => {
   if (d.toggle) { const p = PLAN().phases.findIndex(x => x.id === d.toggle); ui.open[cur + ':' + d.toggle] = !isOpen(PLAN().phases[p], p); renderView(); return; }
   if (d.filter) { ui.filter = d.filter; renderView(); return; }
   if (d.afilter) { ui.appFilter = d.afilter; renderView(); return; }
+  if (semClick(d)) return;
   if (d.act && ACT[d.act]) ACT[d.act](t);
 });
 document.addEventListener('change', e => {
@@ -120,6 +116,7 @@ document.addEventListener('change', e => {
     const r = new FileReader(); r.onload = () => importText(String(r.result)); r.onerror = () => bkMsg('Could not read that file.');
     r.readAsText(f); t.value = ''; return;
   }
+  if (semChange(t)) return;
   if (d.check) { tick(d.check, t.checked); return; }
   if (d.tf === 'target') { mutPlan(pl => { const k = findTask(pl, d.t); if (k) k.target = t.checked; }); return; }
   if (t.id === 'hide-done') { ui.hide = t.checked; $('#cl-list').innerHTML = checklistList(); return; }
@@ -132,6 +129,7 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target, d = t.dataset;
   if (t.type === 'checkbox') return;
+  if (semInput(t)) return;
   if (d.pf) { mutPlan(pl => { pl[d.pf] = t.value; }); renderTop(); return; }
   if (d.f && d.p) { mutPlan(pl => { const ph = pl.phases.find(x => x.id === d.p); if (ph) ph[d.f] = d.f === 'do' ? t.value.split('\n').map(s => s.trim()).filter(Boolean) : t.value; }); if (d.f === 'label' || d.f === 'title') renderTop(); return; }
   if (d.tf) { mutPlan(pl => { const k = findTask(pl, d.t); if (k) k[d.tf] = t.value; }); return; }
@@ -140,12 +138,6 @@ document.addEventListener('input', e => {
     return;
   }
   if (t.id === 'cl-q') { ui.q = t.value; $('#cl-list').innerHTML = checklistList(); return; }
-  if (t.id === 'target') { CY().target = t.value; save('target'); CY().subjects.forEach(s => updateCard(s.id)); return; }
-  if (d.sid) {
-    const s = CY().subjects.find(x => x.id === d.sid); if (!s) return;
-    if (d.f === 'name') s.name = t.value; else if (d.f === 'credits') s.credits = t.value; else { const [g, k] = d.f.split('.'); s[g][k] = t.value; }
-    save('subj:' + s.id); updateCard(s.id); updateSummary(); return;
-  }
   if (t.id === 'app-goal') { S.accts.artist.appGoal = t.value; save('apps'); $('#apps-stats').innerHTML = appStatsHTML(); return; }
   if (d.aid && d.af && d.af !== 'status') {
     const x = AP().find(a => a.id === d.aid); if (!x) return; x[d.af] = t.value; save('apps');
