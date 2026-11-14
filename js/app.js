@@ -103,6 +103,17 @@ document.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   const d = t.dataset;
   if (d.jump) { jumpTo(d.jump); return; }
+  if (d.course) {
+    const f = findCourse(d.course);
+    if (f) {
+      ui.sem = f.sem.id; ui.cx[f.c.id] = true; renderView();
+      requestAnimationFrame(() => document.querySelector(`[data-card="${f.c.id}"]`)?.scrollIntoView({ block: 'center' }));
+    } else {
+      ui.catOpen = true; ui.catq = d.course; renderView();
+      requestAnimationFrame(() => document.querySelector('[data-catd]')?.scrollIntoView({ block: 'center' }));
+    }
+    return;
+  }
   if (d.toggle) { const p = PLAN().phases.findIndex(x => x.id === d.toggle); ui.open[cur + ':' + d.toggle] = !isOpen(PLAN().phases[p], p); renderView(); return; }
   if (d.filter) { ui.filter = d.filter; renderView(); return; }
   if (d.afilter) { ui.appFilter = d.afilter; renderView(); return; }

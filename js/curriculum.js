@@ -15,9 +15,33 @@ const BLOCK_LABEL = { gen: 'General education', found: 'Foundation', major: 'Maj
 const TOTAL_NEED = BLOCKS.reduce((a, b) => a + b.need, 0);
 const CURRENT_SEM = 'hk3'; /* cohort 2025, autumn 2026 = third semester */
 
+/* Course-specific syllabus data from REVIEW MÔN HỌC ATTT. */
+const COURSE_META = {
+  NT106: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, hardness: 8, prereqGroups: [['IT005'], ['IT001']] },
+  NT132: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, hardness: 8.5, prereqGroups: [['IT005']] },
+  NT140: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, hardness: 8.5, prereqGroups: [['IT005']] },
+  NT208: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, hardness: 9, prereqGroups: [['IT002'], ['IT004']] },
+  NT230: { weights: { qt: 25, th: 25, gk: 0, ck: 50 }, hardness: 8.5, prereqGroups: [['NT209']] },
+  NT521: { weights: { qt: 25, th: 25, gk: 0, ck: 50 }, hardness: 9, prereqGroups: [['IT002'], ['NT209']] },
+  NT113: { weights: { qt: 25, th: 25, gk: 0, ck: 50 }, prereqGroups: [['NT132']] },
+  NT133: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, prereqGroups: [['IT006'], ['IT007']] },
+  NT137: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, hardness: 8.5, prereqGroups: [['NT101', 'NT140']], recommended: ['NT230'] },
+  NT204: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, hardness: 8, prereqGroups: [['NT140', 'NT101']] },
+  NT205: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, hardness: 8.5, prereqGroups: [['NT140', 'NT101']] },
+  NT207: { weights: { qt: 25, th: 25, gk: 0, ck: 50 }, prereqGroups: [['NT140', 'NT101']] },
+  NT211: { weights: { qt: 20, th: 30, gk: 0, ck: 50 } },
+  NT212: { weights: { qt: 15, th: 30, gk: 15, ck: 40 }, prereqGroups: [['IT003'], ['IT006'], ['IT007']] },
+  NT213: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, prereqGroups: [['NT208']] },
+  NT330: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, prereqGroups: [['NT140', 'NT101']] },
+  NT334: { weights: { qt: 30, th: 30, gk: 0, ck: 40 }, prereqGroups: [['NT230'], ['NT140', 'NT101']] },
+  NT522: { weights: { qt: 25, th: 25, gk: 0, ck: 50 }, prereqGroups: [['MA006'], ['CS114'], ['NT140']] },
+  NT535: { weights: { qt: 30, th: 20, gk: 0, ck: 50 }, prereqGroups: [['NT140', 'NT101']] },
+  NT547: { weights: { qt: 30, th: 20, gk: 0, ck: 50 } }
+};
+
 /* code, Vietnamese name, English name, credits, theory, practice, block, kind */
 function K(code, vi, en, credits, lt, th, block, kind) {
-  return { code, vi, en, credits, lt, th, block, kind: kind || 'req', nt: /^NT/.test(code), separate: block === 'sep' };
+  return Object.assign({ code, vi, en, credits, lt, th, block, kind: kind || 'req', nt: /^NT/.test(code), separate: block === 'sep' }, COURSE_META[code] || {});
 }
 const CATALOG = [
   /* General education: politics and law */
@@ -248,16 +272,19 @@ const SAMPLE = [
 /* ---------- course and semester builders ---------- */
 function defaultWeights(c) {
   if (c.separate) return { qt: '', th: '', gk: '', ck: '' };
+  if (c.weights) return Object.assign({}, c.weights);
   if (!(c.lt > 0) && c.th > 0) return { qt: '0', th: '100', gk: '0', ck: '0' };
   if (c.th > 0) return { qt: '10', th: '20', gk: '20', ck: '50' };
   return { qt: '20', th: '0', gk: '20', ck: '60' };
 }
 function normCourse(c) {
   const n = v => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : 0; };
+  const meta = CAT[c.code] || {};
   const blank = { qt: '', th: '', gk: '', ck: '' };
   return { id: String(c.id || uid()), code: String(c.code || ''), name: String(c.name || ''), en: String(c.en || ''), credits: n(c.credits), lt: n(c.lt), th: n(c.th),
     block: String(c.block || 'other'), nt: !!c.nt, slot: String(c.slot || ''), separate: !!c.separate, done: !!c.done,
-    w: Object.assign({}, blank, c.w), s: Object.assign({}, blank, c.s) };
+    hardness: c.hardness == null ? meta.hardness || '' : n(c.hardness), prereqGroups: c.prereqGroups || meta.prereqGroups || [],
+    recommended: c.recommended || meta.recommended || [], w: c.w == null ? defaultWeights(meta.code ? meta : c) : Object.assign({}, blank, c.w), s: Object.assign({}, blank, c.s) };
 }
 function normSemester(s, i) {
   return { id: String(s.id || uid()), name: String(s.name || ''), target: s.target == null ? '' : String(s.target),
@@ -266,7 +293,7 @@ function normSemester(s, i) {
 function normSemesters(list) { return arr(list).map(normSemester).sort((a, b) => a.order - b.order); }
 function courseFromCatalog(code, id, slot) {
   const c = CAT[code];
-  return normCourse({ id, code: c.code, name: c.vi, en: c.en, credits: c.credits, lt: c.lt, th: c.th, block: c.block, nt: c.nt, slot: slot || '', separate: c.separate, w: defaultWeights(c) });
+  return normCourse({ id, code: c.code, name: c.vi, en: c.en, credits: c.credits, lt: c.lt, th: c.th, block: c.block, nt: c.nt, slot: slot || '', separate: c.separate, hardness: c.hardness, prereqGroups: c.prereqGroups, recommended: c.recommended, w: defaultWeights(c) });
 }
 function slotCourse(slot, id, n) {
   const sl = SLOTS[slot];

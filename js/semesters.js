@@ -55,6 +55,18 @@ function isPassed(c, r) {
   if (c.done) return true; if (c.separate) return false;
   r = r || calc(c); return r.complete && Math.round(r.final * 10) / 10 >= PASS_MIN;
 }
+function courseLink(code) {
+  const k = CAT[code], label = k ? `${code} · ${k.vi}` : code;
+  return `<button class="course-link" data-course="${esc(code)}" title="Open ${esc(label)}">${esc(code)}</button>`;
+}
+function courseInfoHTML(c, compact) {
+  const k = CAT[c.code], groups = (k && k.prereqGroups) || c.prereqGroups || [], recommended = (k && k.recommended) || c.recommended || [];
+  const difficulty = (k && k.hardness) || c.hardness;
+  if (!difficulty && !groups.length && !recommended.length) return '';
+  const req = groups.length ? groups.map(g => g.length > 1 ? g.map(courseLink).join(' / ') : courseLink(g[0])).join(' · ') : 'None listed';
+  const rec = recommended.length ? ` <span class="course-note">recommended: ${recommended.map(courseLink).join(', ')}</span>` : '';
+  return `<div class="course-info${compact ? ' compact' : ''}">${difficulty ? `<span class="pill">Difficulty ${difficulty}/10</span>` : ''}<span class="course-note">Prerequisites: ${req}.${rec}</span></div>`;
+}
 
 /* ---------- plan data helpers ---------- */
 const SEMS = () => CY().semesters;
@@ -185,6 +197,7 @@ function courseHTML(c) {
       <label class="f">Block<select data-cid="${c.id}" data-cf="block">${BLOCKS.map(b => `<option value="${b.id}"${c.block === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
       <label class="f">Semester<select data-cid="${c.id}" data-cf="move">${semOpts}</select></label>
     </div>
+    ${courseInfoHTML(c)}
     <div class="crs-flags">
       <label class="chk"><input type="checkbox" data-cid="${c.id}" data-cf="nt" ${c.nt ? 'checked' : ''}> NT (project-heavy)</label>
       <label class="chk"><input type="checkbox" data-cid="${c.id}" data-cf="done" ${c.done ? 'checked' : ''}> Done, count credits</label>
@@ -228,7 +241,7 @@ function catListHTML() {
     const rows = CATALOG.filter(k => k.block === g && (!q || (k.code + ' ' + k.vi + ' ' + k.en).toLowerCase().includes(q))).map(k => {
       const w = where[k.code], sl = !w && slotFor(k);
       const act = w ? `<span class="pill">In ${esc(w.name)}</span>` : sl ? `<button class="sm" data-act="cat-add" data-code="${k.code}">Use slot in ${esc(sl.sem.name)}</button>` : `<button class="sm" data-act="cat-add" data-code="${k.code}">Add to ${esc(cs ? cs.name : 'plan')}</button>`;
-      return `<div class="cat-row"><span class="code">${k.code}</span><span class="nm">${esc(k.vi)}<small>${esc(k.en)}</small></span><span class="cr">${k.credits} cr</span>${k.nt ? '<span class="tagnt">NT</span>' : '<span></span>'}<span class="act">${act}</span></div>`;
+      return `<div class="cat-row"><span class="code">${k.code}</span><span class="nm">${esc(k.vi)}<small>${esc(k.en)}</small>${courseInfoHTML(k, true)}</span><span class="cr">${k.credits} cr</span>${k.nt ? '<span class="tagnt">NT</span>' : '<span></span>'}<span class="act">${act}</span></div>`;
     }).join('');
     return rows ? `<h3>${esc(BLOCK_LABEL[g])}</h3>${rows}` : '';
   }).join('') || '<div class="empty">No course matches that search.</div>';
@@ -272,11 +285,12 @@ function updateCourse(c) {
 }
 function applyCatalog(c, code) {
   const k = CAT[code]; if (!k) return;
-  Object.assign(c, { code: k.code, name: k.vi, en: k.en, credits: k.credits, lt: k.lt, th: k.th, block: k.block, nt: k.nt });
+  Object.assign(c, { code: k.code, name: k.vi, en: k.en, credits: k.credits, lt: k.lt, th: k.th, block: k.block, nt: k.nt,
+    hardness: k.hardness || '', prereqGroups: k.prereqGroups || [], recommended: k.recommended || [], w: defaultWeights(k) });
 }
 function clearSlot(c) {
   const sl = SLOTS[c.slot];
-  Object.assign(c, { code: '', name: sl.vi, en: sl.label, credits: sl.credits, lt: sl.lt, th: sl.th, block: sl.block, nt: sl.nt });
+  Object.assign(c, { code: '', name: sl.vi, en: sl.label, credits: sl.credits, lt: sl.lt, th: sl.th, block: sl.block, nt: sl.nt, hardness: '', prereqGroups: [], recommended: [], w: defaultWeights(sl) });
 }
 
 /* ---------- event hooks (called from app.js) ---------- */
