@@ -86,3 +86,15 @@ The page follows your system light or dark setting, and the **Theme** button cyc
 | `js/app.js` | Clicks and typing, editing actions, undo, backup and import, and the screen routing |
 
 To change the starting plans, edit `js/defaults.js`. Anyone who already has saved edits keeps their own version until they use **Reset plan to default**. The grade-scale cutoffs are in `grade4()` in `js/render.js`.
+
+## Updating lecturer data
+
+The lecturer screen reads `data/TKBChuan/lecturer_analysis.json`. Regenerate it from the analysis workbook after updating the TKB data:
+
+```bash
+python -m pip install -r requirements.txt
+python scripts/update_tkb.py --check
+python scripts/update_tkb.py
+```
+
+The default workbook is `data/TKBChuan/NT_CS_SE_course_lecturer_analysis.xlsx`; use `--input` when the updated workbook has another name. Commit and deploy the generated JSON together with the workbook update so production serves the new data.
