@@ -318,8 +318,7 @@ function lecturerInput(t) {
     ui.laSearch = t.value; ui.laExpand = {}; ui.laTExp = {};
     const cards = document.querySelector('.la-cards');
     if (cards) {
-      /* update inline without full re-render for search typing */
-      requestAnimationFrame(() => renderView());
+      keepFocus(renderView);
     }
     return true;
   }
