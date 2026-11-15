@@ -88,13 +88,14 @@ function buildTeacherMap() {
 
 /* ========== HTML builders ========== */
 function laHKcells(c) {
-  const hks = [
-    ['HK1 23-24', c.hk1_2324],
-    ['HK1 24-25', c.hk1_2425],
-    ['HK2 24-25', c.hk2_2425],
-    ['HK1 25-26', c.hk1_2526],
+  const legacy = [
+    ['HK1 23-24', c.hk1_2324], ['HK1 24-25', c.hk1_2425],
+    ['HK2 24-25', c.hk2_2425], ['HK1 25-26', c.hk1_2526],
     ['HK2 25-26', c.hk2_2526],
   ];
+  const hks = LA_DATA.semesters
+    ? LA_DATA.semesters.map(label => [label, c.history[label]])
+    : legacy;
   return hks.map(([lbl, v]) =>
     `<div class="la-hk ${v > 0 ? 'active' : ''}"><small>${esc(lbl)}</small><b>${v > 0 ? v : '—'}</b></div>`
   ).join('');
@@ -129,13 +130,15 @@ function laSubjectCard(c) {
   const flags  = warnFlags(c);
   const sc     = sevClass(flags);
   const open   = !!ui.laExpand[c.ma];
-  const hkTag  = c.mo_hk2_2526 === 'Có' ? '<span class="la-tag green">HK2 25-26</span>' : `<span class="la-tag muted">${esc(c.mo_gan_nhat)}</span>`;
+  const latest = LA_DATA.semesters ? LA_DATA.semesters[LA_DATA.semesters.length - 1] : 'HK2 25-26';
+  const current = c.mo_moi_nhat === undefined ? c.mo_hk2_2526 : c.mo_moi_nhat;
+  const hkTag  = current === 'Có' ? `<span class="la-tag green">${esc(latest)}</span>` : `<span class="la-tag muted">${esc(c.mo_gan_nhat)}</span>`;
   const warnHTML = flags.length ? `<div class="la-warns">${flags.map(f => `<div class="la-wflag sev-${f.sev}">⚠ ${esc(f.msg)}</div>`).join('')}</div>` : '';
   const lts = laLecturers(c.ma), tas = laTAs(c.ma);
 
   const bodyHTML = open ? `<div class="la-body">
     <div class="la-stats-row">
-      <div class="la-stat"><b>${c.so_hk_mo}<span>/5</span></b><small>HK đã mở</small></div>
+      <div class="la-stat"><b>${c.so_hk_mo}<span>/${LA_DATA.semesters ? LA_DATA.semesters.length : 5}</span></b><small>HK đã mở</small></div>
       <div class="la-stat"><b>${c.tb_lop_hk}</b><small>Lớp TB/HK</small></div>
       <div class="la-stat"><b>${c.tb_si_so}</b><small>Sĩ số TB</small></div>
       <div class="la-stat"><b>${c.so_gv}</b><small>GV LT</small></div>

@@ -89,12 +89,21 @@ To change the starting plans, edit `js/defaults.js`. Anyone who already has save
 
 ## Updating lecturer data
 
-The lecturer screen reads `data/TKBChuan/lecturer_analysis.json`. Regenerate it from the analysis workbook after updating the TKB data:
+Put each new raw TKB workbook in `data/TKBChuan/`. The integration script discovers all raw `.xlsx` files there, including the latest semester workbook, rebuilds the analysis workbook, and keeps semester columns/history up to date:
+
+The workbook is generated output; do not hand-edit it because the next rebuild replaces it.
 
 ```bash
 python -m pip install -r requirements.txt
+python scripts/integrate_tkb.py
 python scripts/update_tkb.py --check
 python scripts/update_tkb.py
 ```
 
-The default workbook is `data/TKBChuan/NT_CS_SE_course_lecturer_analysis.xlsx`; use `--input` when the updated workbook has another name. Commit and deploy the generated JSON together with the workbook update so production serves the new data.
+Extra paths are additive to the files already in `data/TKBChuan/`:
+
+```bash
+python scripts/integrate_tkb.py data/TKBChuan/new_schedule.xlsx
+```
+
+The default analysis workbook is `data/TKBChuan/NT_CS_SE_course_lecturer_analysis.xlsx`, and the default site data is `data/TKBChuan/lecturer_analysis.json`. Commit and deploy both generated files together.

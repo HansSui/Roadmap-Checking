@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -21,12 +22,6 @@ COURSE_COLUMNS = {
     "Mã MH": "ma",
     "Tên môn học": "ten",
     "Nhóm": "nhom",
-    "HK1 23-24": "hk1_2324",
-    "HK1 24-25": "hk1_2425",
-    "HK2 24-25": "hk2_2425",
-    "HK1 25-26": "hk1_2526",
-    "HK2 25-26": "hk2_2526",
-    "Số HK mở (/5)": "so_hk_mo",
     "TB lớp / HK mở": "tb_lop_hk",
     "TB lớp HK1": "tb_lop_hk1",
     "TB lớp HK2": "tb_lop_hk2",
@@ -36,8 +31,6 @@ COURSE_COLUMNS = {
     "GV chính (% lớp)": "gv_chinh",
     "% lớp chưa phân công": "pct_chua_pc",
     "Mở gần nhất": "mo_gan_nhat",
-    "Mở ở HK2 25-26 (mới nhất)?": "mo_hk2_2526",
-    "GV đang dạy ở HK mới nhất": "gv_hk_moi",
 }
 
 STAFF_COLUMNS = {
@@ -51,7 +44,6 @@ STAFF_COLUMNS = {
     "Số HK đã dạy": "so_hk",
     "Các HK đã dạy": "cac_hk",
     "Dạy gần nhất": "day_gan",
-    "Đang dạy ở HK2 25-26?": "dang_day",
 }
 
 
@@ -92,11 +84,51 @@ def sheet_rows(workbook: openpyxl.Workbook, name: str, required: dict[str, str])
 
 def export(input_path: Path) -> dict[str, list[dict[str, Any]]]:
     workbook = openpyxl.load_workbook(input_path, read_only=True, data_only=True)
+    semesters, courses = course_rows(workbook)
+    staff_columns = dict(STAFF_COLUMNS)
+    latest_column = f"Đang dạy ở {semesters[-1]}?"
+    staff_columns[latest_column] = "dang_day"
     return {
-        "courses": sheet_rows(workbook, "Tổng quan môn học", COURSE_COLUMNS),
-        "lecturers": sheet_rows(workbook, "Giảng viên LT & % ", STAFF_COLUMNS),
-        "tas": sheet_rows(workbook, "Trợ giảng TH & %", STAFF_COLUMNS),
+        "semesters": semesters,
+        "courses": courses,
+        "lecturers": sheet_rows(workbook, "Giảng viên LT & % ", staff_columns),
+        "tas": sheet_rows(workbook, "Trợ giảng TH & %", staff_columns),
     }
+
+
+def course_rows(workbook: openpyxl.Workbook) -> tuple[list[str], list[dict[str, Any]]]:
+    sheet = workbook["Tổng quan môn học"]
+    rows = sheet.iter_rows(values_only=True)
+    headers = next(rows, None)
+    if not headers:
+        raise ValueError("Empty sheet: Tổng quan môn học")
+    index = {clean(value): i for i, value in enumerate(headers) if clean(value)}
+    columns = dict(COURSE_COLUMNS)
+    open_count = next((header for header in index if header.startswith("Số HK mở (")), None)
+    if open_count:
+        columns["Số HK mở (dynamic)"] = "so_hk_mo"
+        index["Số HK mở (dynamic)"] = index[open_count]
+    missing = [column for column in columns if column not in index]
+    if missing:
+        raise ValueError(f"Tổng quan môn học: missing columns: {', '.join(missing)}")
+    semesters = [header for header in index if re.fullmatch(r"HK[12] \d\d-\d\d", header)]
+    latest_open = next((header for header in index if header.startswith("Mở ở ")), None)
+    latest_staff = next((header for header in index if header.startswith("GV đang dạy ở ")), None)
+    result = []
+    for row in rows:
+        if not any(value is not None for value in row):
+            continue
+        record = {target: clean(row[index[source]]) for source, target in columns.items()}
+        record["history"] = {
+            semester: row[index[semester]] or 0
+            for semester in semesters
+        }
+        record["mo_gan_nhat"] = record.get("mo_gan_nhat", "")
+        record["mo_moi_nhat"] = clean(row[index[latest_open]]) if latest_open else ""
+        record["gv_hk_moi"] = clean(row[index[latest_staff]]) if latest_staff else ""
+        if record["ma"]:
+            result.append(record)
+    return semesters, result
 
 
 def write_json(output_path: Path, data: dict[str, list[dict[str, Any]]]) -> None:
