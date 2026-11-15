@@ -28,11 +28,12 @@ function renderHero() {
 }
 function renderTabs() {
   const edits = curTab === 'plan' || curTab === 'reference';
+  const isLecturer = curTab === 'lecturer';
   $('#tabs').innerHTML = `<div class="tabbar"><nav class="tabs" aria-label="Sections">${TABS[cur].map(([id, l]) => `<a href="#${cur}-${id}" ${id === curTab ? 'aria-current="page"' : ''}>${l}</a>`).join('')}</nav>${edits ? `<button class="editbtn" data-act="edit" aria-pressed="${ui.edit}">${ui.edit ? 'Done editing' : 'Edit plan'}</button>` : ''}</div>`;
 }
 function renderTop() { renderSwitcher(); renderHero(); }
 function renderView() {
-  const fn = { plan: viewPlan, checklist: viewChecklist, reference: viewReference, grades: viewGrades, applications: viewApps }[curTab];
+  const fn = { plan: viewPlan, checklist: viewChecklist, reference: viewReference, grades: viewGrades, applications: viewApps, lecturer: viewLecturer }[curTab];
   $('#view').innerHTML = fn();
 }
 function renderAll() { document.documentElement.setAttribute('data-acct', cur); renderTop(); renderTabs(); renderView(); }

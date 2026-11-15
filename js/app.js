@@ -118,6 +118,7 @@ document.addEventListener('click', e => {
   if (d.filter) { ui.filter = d.filter; renderView(); return; }
   if (d.afilter) { ui.appFilter = d.afilter; renderView(); return; }
   if (semClick(d)) return;
+  if (lecturerClick(d)) return;
   if (d.act && ACT[d.act]) ACT[d.act](t);
 });
 document.addEventListener('change', e => {
@@ -141,6 +142,7 @@ document.addEventListener('input', e => {
   const t = e.target, d = t.dataset;
   if (t.type === 'checkbox') return;
   if (semInput(t)) return;
+  if (lecturerInput(t)) return;
   if (d.pf) { mutPlan(pl => { pl[d.pf] = t.value; }); renderTop(); return; }
   if (d.f && d.p) { mutPlan(pl => { const ph = pl.phases.find(x => x.id === d.p); if (ph) ph[d.f] = d.f === 'do' ? t.value.split('\n').map(s => s.trim()).filter(Boolean) : t.value; }); if (d.f === 'label' || d.f === 'title') renderTop(); return; }
   if (d.tf) { mutPlan(pl => { const k = findTask(pl, d.t); if (k) k[d.tf] = t.value; }); return; }
@@ -180,6 +182,7 @@ function route() {
   if (a !== cur) { ui.filter = 'all'; ui.q = ''; ui.hide = false; ui.appFilter = 'all'; ui.edit = false; }
   cur = a; curTab = t; ui.tabOf[a] = t;
   try { localStorage.setItem('duo-last', a); } catch (e) {}
+  if (curTab === 'lecturer') laLoad();
   renderAll();
 }
 window.addEventListener('hashchange', route);

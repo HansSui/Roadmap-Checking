@@ -1,7 +1,7 @@
 /* ================= defaults ================= */
 const ACCTS = ['cyber', 'artist'];
 const TABS = {
-  cyber: [['plan', 'Plan'], ['checklist', 'Checklist'], ['reference', 'Reference'], ['grades', 'Grades']],
+  cyber: [['plan', 'Plan'], ['checklist', 'Checklist'], ['reference', 'Reference'], ['grades', 'Grades'], ['lecturer', 'Phân tích GV']],
   artist: [['plan', 'Plan'], ['checklist', 'Checklist'], ['reference', 'Reference'], ['applications', 'Applications']]
 };
 const STATUSES = ['Saved', 'Applied', 'Replied', 'Test', 'Interview', 'Offer', 'Rejected'];
